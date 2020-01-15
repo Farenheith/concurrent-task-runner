@@ -1,0 +1,39 @@
+{
+  "name": "concurrent-task-runner",
+  "version": "1.0.0",
+  "description": "A lib to run concurrent tasks in a controlled pace",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "run-test",
+    "lint": "run-lint",
+    "prebuild": "run-pre-build",
+    "build": "run-build",
+    "test:coverage": "run-test-coverage",
+    "test:coverage:lcovonly": "run-test-lcov"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Farenheith/concurrent-task-runner.git"
+  },
+  "keywords": [
+    "promises",
+    "tasks",
+    "parallel",
+    "concurrent",
+    "controlled",
+    "pace"
+  ],
+  "author": "Farenheith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Farenheith/concurrent-task-runner/issues"
+  },
+  "homepage": "https://github.com/Farenheith/concurrent-task-runner#readme",
+  "devDependencies": {
+    "base-project-config": "^1.2.7",
+    "strict-unit-tests": "^1.2.1"
+  },
+  "dependencies": {
+    "p-queue": "^6.2.1"
+  }
+}
