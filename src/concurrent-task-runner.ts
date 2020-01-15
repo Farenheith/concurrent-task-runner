@@ -1,8 +1,9 @@
 import PQueue from 'p-queue';
+import { arrayHelper } from './array-helper';
 
 export class ConcurrentTaskRunner<TEntity, TCache> {
-  private currentIndex = 0;
-  private readonly queue: PQueue;
+	private readonly queue: PQueue;
+	private readonly orderedEntities: Iterator<TEntity>;
 
 	/**
 	 * @param orderedEntities An array with the entities that will be the input for the work to be done. This array must be ordered by the grouping id, if you want to use getGroupid param
@@ -11,11 +12,12 @@ export class ConcurrentTaskRunner<TEntity, TCache> {
 	 * @param getGroupId A function that returns a grouping Id: entities with same grouping id will never run concurrently. If you don't inform this parameter, all entities can ran concurrently
 	 */
   constructor(
-    private readonly orderedEntities: Iterator<TEntity>,
+    orderedEntities: Iterator<TEntity> | TEntity[],
     concurrency: number,
     private readonly doWork: (entity: TEntity, cache: TCache) => PromiseLike<void>,
     private readonly getGroupId: (entity: TEntity) => unknown = (entity) => entity,
   ) {
+		this.orderedEntities = arrayHelper.getIterator(orderedEntities);
     this.queue = new PQueue({
       autoStart: true,
       concurrency,

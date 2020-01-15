@@ -2,8 +2,9 @@ import { it } from 'mocha';
 import { expect } from 'chai';
 import * as PQueue from 'p-queue';
 import { ConcurrentTaskRunner } from '../src/concurrent-task-runner';
-import { describeClass, SinonStub, stub } from 'strict-unit-tests';
-
+import { describeClass } from 'strict-unit-tests';
+import { arrayHelper } from '../src/array-helper';
+import { stub, SinonStub } from 'sinon';
 let orderedEntities: any[];
 let target: ConcurrentTaskRunner<any, any>;
 let onIdle: SinonStub;
@@ -11,19 +12,24 @@ let add: SinonStub;
 let defaultBkp: any;
 
 function bootStrapper() {
-	orderedEntities = [];
-	const getGroupId = () => undefined;
+	orderedEntities = 'orderedEnttities value' as any;
+	const getGroupId = () => Promise.resolve();
 	const doWork = () => Promise.resolve();
 	add = stub().named('add') as any;
 	onIdle = stub().named('onIdle') as any;
 	defaultBkp = PQueue.default;
 	(PQueue as any).default = stub().returns({ add, onIdle});
-	target = new ConcurrentTaskRunner(orderedEntities, 10, getGroupId, doWork);
+	stub(arrayHelper, 'getIterator').returns('getIterator result' as any);
+	target = new ConcurrentTaskRunner(orderedEntities, 10, doWork, getGroupId);
 
 	expect(PQueue.default).to.have.callsLike([{
 		autoStart: true,
 		concurrency: 10,
 	}]);
+	expect(arrayHelper.getIterator).to.have.callsLike([
+		'orderedEnttities value'
+	]);
+	expect(target['orderedEntities']).to.be.eq('getIterator result' as any);
 	return target;
 }
 
@@ -32,46 +38,59 @@ describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
 		(PQueue as any).default = defaultBkp;
 	});
 
-  describe('getNextTasks' as any, () => {
+	describe('constructor' as any, () => {
+		it('should instantiate with default function as getGroupId', () => {
+			target = new ConcurrentTaskRunner(orderedEntities, 10, () => Promise.resolve());
+
+			expect(target['getGroupId']('test')).to.be.eq('test');
+		})
+	});
+
+  describe('createNextTask' as any, () => {
     it('should group items from same group and call doWorkGroup', async () => {
-      orderedEntities.push(
-        {
+			const item1 = {
+				groupId: 'groupA',
+				info: 'item1',
+			};
+			const item2 = {
+				groupId: 'groupA',
+				info: 'item2',
+			};
+			const item3 = {
+				groupId: 'groupA',
+				info: 'item3',
+			};
+			const item4 = {
+				groupId: 'groupB',
+				info: 'item4',
+			};
+      (target as any).orderedEntities = (function* () {
+        yield {
           groupId: 'group0',
           info: 'item0',
-        },
-        {
-          groupId: 'groupA',
-          info: 'item1',
-        },
-        {
-          groupId: 'groupA',
-          info: 'item2',
-        },
-        {
-          groupId: 'groupA',
-          info: 'item3',
-        },
-        {
-          groupId: 'groupB',
-          info: 'item4',
-        },
-      );
+        };
+        yield item1;
+        yield item2;
+        yield item3;
+        yield item4;
+			})();
       stub(target, 'doWorkGroup' as any).returns(Promise.resolve('doWorkResult'));
       stub(target, 'isFromSameGroup' as any).callsFake((a, b) => a.groupId === b.groupId);
-      target['currentIndex'] = 1;
+			target['currentIndex'] = 1;
+			target['orderedEntities'].next()
+			const next = target['orderedEntities'].next();
 
-      const result = await target['getNextTasks']();
+      const result = await target['createNextTask'](next.value);
 
 			expect(onIdle).to.have.callsLike();
 			expect(add).to.have.callsLike();
       expect(await result()).to.be.eq('doWorkResult');
       expect(target['isFromSameGroup']).to.have.callsLike(
-				[orderedEntities[1], orderedEntities[2]],
-				[orderedEntities[1], orderedEntities[3]],
-				[orderedEntities[1], orderedEntities[4]],
+				[item1, item2],
+				[item1, item3],
+				[item1, item4],
 			);
-      expect(target['doWorkGroup']).to.have.callsLike([orderedEntities[1], [orderedEntities[2], orderedEntities[3]]]);
-			expect(target['currentIndex']).to.be.eq(4);
+      expect(target['doWorkGroup']).to.have.callsLike([item1, [item2, item3]]);
     });
   });
 
@@ -129,19 +148,23 @@ describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
 
   describe('run', () => {
     it('should create a PromisePool and start it', async () => {
-			orderedEntities.push('job1', 'job2', 'job3');
+			let current: string;
+			(target as any).orderedEntities = (function *() {
+				yield current = 'Job1';
+				yield current = 'Job2';
+				yield current = 'Job3';
+			})();
       onIdle.returns(Promise.resolve());
       add.returns(Promise.resolve());
-      const getNextTasks = stub(target, 'getNextTasks' as any).callsFake(() => {
-        target['currentIndex']++;
-        return `runJob${target['currentIndex']}`;
+      const createNextTask = stub(target, 'createNextTask' as any).callsFake(() => {
+        return `run${current}` as any;
       });
 
       const result = await target.run();
 
       expect(onIdle).to.have.callsLike([]);
       expect(result).to.be.undefined;
-      expect(getNextTasks).to.have.callsLike([], [], []);
+      expect(createNextTask).to.have.callsLike(['Job1'], ['Job2'], ['Job3']);
       expect(add).to.have.callsLike(
 				['runJob1'], ['runJob2'], ['runJob3'],
 			);
