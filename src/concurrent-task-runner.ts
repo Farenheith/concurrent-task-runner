@@ -11,7 +11,7 @@ export class ConcurrentTaskRunner<TEntity, TCache> {
 	 * @param getGroupId A function that returns a grouping Id: entities with same grouping id will never run concurrently. If you don't inform this parameter, all entities can ran concurrently
 	 */
   constructor(
-    private readonly orderedEntities: TEntity[],
+    private readonly orderedEntities: Iterator<TEntity>,
     concurrency: number,
     private readonly doWork: (entity: TEntity, cache: TCache) => PromiseLike<void>,
     private readonly getGroupId: (entity: TEntity) => unknown = (entity) => entity,
@@ -22,18 +22,16 @@ export class ConcurrentTaskRunner<TEntity, TCache> {
     });
   }
 
-  private getNextTasks() {
-    const entity = this.orderedEntities[this.currentIndex];
-    this.currentIndex++;
-    const nextEntities: TEntity[] = [];
-    while (this.currentIndex < this.orderedEntities.length
-      && this.isFromSameGroup(entity, this.orderedEntities[this.currentIndex])
-    ) {
-      nextEntities.push(this.orderedEntities[this.currentIndex]);
-      this.currentIndex++;
-    }
+  private createNextTask(entity: TEntity) {
+		const nextEntities: TEntity[] = [];
+		let next = this.orderedEntities.next();
+		while (!next.done && this.isFromSameGroup(entity, next.value)
+		) {
+			nextEntities.push(next.value);
+			next = this.orderedEntities.next();
+		}
 
-    return () => this.doWorkGroup(entity, nextEntities);
+		return () => this.doWorkGroup(entity, nextEntities);
   }
 
   private async doWorkGroup(entity: TEntity, nextEntities: TEntity[]) {
@@ -49,9 +47,14 @@ export class ConcurrentTaskRunner<TEntity, TCache> {
     return this.getGroupId(entity1) === this.getGroupId(entity2);
   }
 
+	/**
+	 * Runs the tasks
+	 */
 	async run() {
-    while (this.currentIndex < this.orderedEntities.length) {
-      this.queue.add(this.getNextTasks());
+		let next = this.orderedEntities.next();
+    while (!next.done) {
+			this.queue.add(this.createNextTask(next.value));
+			next = this.orderedEntities.next();
     }
 
     return this.queue.onIdle();

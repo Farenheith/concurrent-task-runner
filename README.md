@@ -8,4 +8,8 @@ It uses [P-Queue](https://www.npmjs.com/package/p-queue) to control the number o
 
 ## How to use:
 
-* Instantiate the
+* First, 
+* Instantiate ConcurrentTaskRunner like this:
+```typescript
+const taskRunner = new ConcurrentTaskRunner(entities)
+```
