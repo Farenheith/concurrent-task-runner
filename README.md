@@ -1,5 +1,11 @@
 # concurrent-task-runner
 
+[![Build Status](https://travis-ci.com/Farenheith/concurrent-task-runner.svg?branch=master)](https://travis-ci.com/Farenheith/concurrent-task-runner)
+[![codecov](https://codecov.io/gh/Farenheith/concurrent-task-runner/branch/master/graph/badge.svg)](https://codecov.io/gh/Farenheith/concurrent-task-runner)
+[![Maintainability](https://api.codeclimate.com/v1/badges/587d2512da5d8a892778/maintainability)](https://codeclimate.com/github/Farenheith/concurrent-task-runner/maintainability)
+[![Packages](https://david-dm.org/Farenheith/concurrent-task-runner.svg)](https://david-dm.org/Farenheith/concurrent-task-runner)
+[![npm version](https://badge.fury.io/js/concurrent-task-runner.svg)](https://badge.fury.io/js/concurrent-task-runner)
+
 A lib to run concurrent promises in a controlled pace and number
 
 ## How it works?
