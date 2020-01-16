@@ -2,14 +2,15 @@ import { it } from 'mocha';
 import { expect } from 'chai';
 import * as PQueue from 'p-queue';
 import { ConcurrentTaskRunner } from '../src/concurrent-task-runner';
-import { describeClass } from 'strict-unit-tests';
+import { describeClass, stub, SinonStub } from 'strict-unit-tests';
 import { arrayHelper } from '../src/array-helper';
-import { stub, SinonStub } from 'sinon';
+
 let orderedEntities: any[];
 let target: ConcurrentTaskRunner<any, any>;
 let onIdle: SinonStub;
 let add: SinonStub;
 let defaultBkp: any;
+let getIteratorBkp: any;
 
 function bootStrapper() {
 	orderedEntities = 'orderedEnttities value' as any;
@@ -19,7 +20,8 @@ function bootStrapper() {
 	onIdle = stub().named('onIdle') as any;
 	defaultBkp = PQueue.default;
 	(PQueue as any).default = stub().returns({ add, onIdle});
-	stub(arrayHelper, 'getIterator').returns('getIterator result' as any);
+	getIteratorBkp = arrayHelper.getIterator;
+	arrayHelper.getIterator = stub().returns('getIterator result' as any);
 	target = new ConcurrentTaskRunner(orderedEntities, 10, doWork, getGroupId);
 
 	expect(PQueue.default).to.have.callsLike([{
@@ -33,17 +35,20 @@ function bootStrapper() {
 	return target;
 }
 
-describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
-	afterEach(() => {
-		(PQueue as any).default = defaultBkp;
-	});
-
+describeClass.static(ConcurrentTaskRunner, describe => {
 	describe('constructor' as any, () => {
 		it('should instantiate with default function as getGroupId', () => {
 			target = new ConcurrentTaskRunner(orderedEntities, 10, () => Promise.resolve());
 
 			expect(target['getGroupId']('test')).to.be.eq('test');
 		})
+	});
+});
+
+describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
+	afterEach(() => {
+		arrayHelper.getIterator = getIteratorBkp;
+		(PQueue as any).default = defaultBkp;
 	});
 
   describe('createNextTask' as any, () => {
