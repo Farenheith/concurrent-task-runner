@@ -1,11 +1,11 @@
-import { describeStruct, expect, SinonStub } from 'strict-unit-tests';
+import { describeStruct, expect, SinonStub, beforeEach } from 'strict-unit-tests';
 import { arrayHelper } from '../src/array-helper';
 import {stub } from 'sinon';
 
 describeStruct(arrayHelper, 'arrayHelper', () => {
 	describe('getIterator', () => {
-		let isArray: SinonStub<any, any>;
-		let transformIterator: SinonStub<any, any>;
+		let isArray: SinonStub;
+		let transformIterator: SinonStub;
 
 		beforeEach(() => {
 			isArray = stub(Array, 'isArray');

@@ -1,3 +1,0 @@
-# mocha.opts
-    --require ./node_modules/base-project-config/ts-node-register.js
-    ./node_modules/base-project-config/setup.spec.js

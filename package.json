@@ -31,7 +31,7 @@
   "homepage": "https://github.com/Farenheith/concurrent-task-runner#readme",
   "devDependencies": {
     "base-project-config": "^1.2.7",
-    "strict-unit-tests": "^1.2.1"
+    "strict-unit-tests": "github:farenheith/strict-unit-tests"
   },
   "dependencies": {
     "p-queue": "^6.2.1"

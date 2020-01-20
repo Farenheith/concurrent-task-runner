@@ -35,20 +35,13 @@ function bootStrapper() {
 	return target;
 }
 
-describeClass.static(ConcurrentTaskRunner, describe => {
-	describe('constructor' as any, () => {
+describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
+	describe.static('constructor' as any, () => {
 		it('should instantiate with default function as getGroupId', () => {
 			target = new ConcurrentTaskRunner(orderedEntities, 10, () => Promise.resolve());
 
 			expect(target['getGroupId']('test')).to.be.eq('test');
 		})
-	});
-});
-
-describeClass(ConcurrentTaskRunner, bootStrapper, describe => {
-	afterEach(() => {
-		arrayHelper.getIterator = getIteratorBkp;
-		(PQueue as any).default = defaultBkp;
 	});
 
   describe('createNextTask' as any, () => {
